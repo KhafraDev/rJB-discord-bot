@@ -1,0 +1,24 @@
+{
+  "name": "rjb-discord-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "cyrepo": "^2.0.2",
+    "discord.js": "^12.0.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/khafradev/rjb-discord-bot.git"
+  },
+  "author": "Khafra",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/khafradev/rjb-discord-bot/issues"
+  },
+  "homepage": "https://github.com/khafradev/rjb-discord-bot#readme"
+}

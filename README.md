@@ -1,2 +1,3 @@
-# rJB-discord-bot
- /r/jailbreak Discord bot
+# rJB-Discord-Bot
+ Discord bot for searching up jailbreak tweaks.
+ Heavily WIP.
