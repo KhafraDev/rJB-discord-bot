@@ -1,5 +1,6 @@
 const { Client, MessageEmbed } = require('discord.js');
 const { MongoClient } = require('mongodb');
+const cmp = require('semver-compare');
 const Download = require('cyrepo/src/download');
 const Parse = require('cyrepo/src/parse');
 
@@ -18,9 +19,10 @@ const Connect = async () => {
 }
 
 const update = async () => {
+    const start = new Date().getTime();
     await Download();
     await Parse();
-    console.log('Done updating packages!');
+    console.log('Done updating packages in %d seconds!', (new Date().getTime() - start) / 1000);
 }
 
 setTimeout(update, 10); // run on start-up.
@@ -48,38 +50,49 @@ KhafraClient.on('message', async message => {
         if(!results.length) {
             return message.channel.send('No packages found.');
         }
-
-        const embed = new MessageEmbed()
-            .setTitle(`${results[0].displayName} | ${results[0].name}`)
-            .setDescription(`Found **${Object.keys(results[0].version).length}** versions.\n${Object.keys(results[0].version).map(e => e.replace(/\|/g, '.')).join('\n')}`);
-        const m = await message.channel.send('Which version would you like to search for?', embed);
+            
+        const m = await message.channel.send(
+            'Which version would you like to search for?', 
+            new MessageEmbed()
+                .setTitle(`Found **${results.length}** Results!`)
+                .setDescription(results.map((t, i) => `${i+1}. **${t.displayName}** | ${t.name}`)
+                    .join('\n')
+                    .slice(0, 1999)
+                )    
+        );
 
         return m.channel.createMessageCollector(
-            _m => _m.author.id === message.author.id, 
+            _m => _m.author.id === message.author.id && !isNaN(_m.content), 
             { time: 15000, max: 2 }
         )
-            .on('collect', async msg => {
-                if(!Object.keys(results[0].version).some(v => v === msg.content.replace(/\./g, '|'))) {
-                    return m.edit('**Version not found.**', {});
-                }
+        .on('collect', async msg => {
+            if(typeof results[Number(msg.content) - 1] === 'undefined') {
+                return message.channel.send(`Invalid index "${msg.content}"`);
+            }
 
-                const r = results[0].version[msg.content.replace(/\./g, '|')];
-                const hashes = Object.entries(r)
-                    .map(([k, v]) => ['MD5sum', 'SHA1', 'SHA256', 'SHA512'].includes(k) ? k + ': ' + v + '\n' : '')
-                    .join('')
-                    .trim();
+            const latest = Object.keys(results[Number(msg.content) - 1].version)
+                .map(n => n.replace(/\|/g, '.'))
+                .sort(cmp)
+                .pop();
+            const r = results[Number(msg.content) - 1].version[latest.replace(/\./g, '|')];
 
-                return message.channel.send(
-                    new MessageEmbed()
-                    .setTitle(`${r.Name} | ${r.Package}`)
-                    .setDescription(`\`\`\`${r.Description || ''}\`\`\``)
-                    .addField('Author', r.Author || r.Maintainer || 'N/A', true)
-                    .addField('Homepage', r.Homepage || 'N/A', true)
-                    .addField('Depiction', r.Depiction || r.SileoDepiction || 'N/A', false)
-                    .addField('Hashes', hashes.replace(/\s+/g, '').length ? hashes : 'N/A', true)
-                );
-            })
+            const hashes = Object.entries(r)
+                .map(([k, v]) => ['MD5sum', 'SHA1', 'SHA256', 'SHA512'].includes(k) ? k + ': ' + v + '\n' : '')
+                .join('')
+                .trim();
+
+            return message.channel.send(
+                new MessageEmbed()
+                .setTitle(`${r.Name} | ${r.Package}`)
+                .setDescription(`\`\`\`${r.Description || ''}\`\`\``)
+                .addField('Version', latest, true)
+                .addField('Author', r.Author || r.Maintainer || 'N/A', true)
+                .addField('Homepage', r.Homepage || 'N/A', true)
+                .addField('Depiction', r.Depiction || r.SileoDepiction || 'N/A', false)
+                .addField('Hashes', hashes.replace(/\s+/g, '').length ? hashes : 'N/A', true)
+            );
+        })
     }
 });
 
-KhafraClient.login('');
+KhafraClient.login('NTQxNDMwMTM0MjMwNDgyOTY3.XnGiAg.YVIZQQkzPF6_kGp0LqBOOJJ3aRY');
